@@ -17,7 +17,7 @@ const LABEL: Record<string, string> = {
   sun: 'Sun',
 }
 
-export default function Toolbar() {
+export default function Toolbar({ isMobile }: { isMobile: boolean }) {
   const project = useEngine((s) => s.project)
   const mode = useEngine((s) => s.mode)
   const setMode = useEngine((s) => s.setMode)
@@ -55,11 +55,11 @@ export default function Toolbar() {
 
   return (
     <div
-      className="panel border-b flex items-center gap-2 px-2"
+      className="panel border-b flex items-center gap-2 px-2 overflow-x-auto"
       style={{ paddingTop: 'calc(6px + env(safe-area-inset-top, 0px))', paddingBottom: 6 }}
     >
-      <button className="btn" onClick={backToProjects}>
-        ☰ Projects
+      <button className="btn" onClick={backToProjects} title="Back to Projects">
+        ☰ <span className="hidden sm:inline">Projects</span>
       </button>
 
       <div className="relative" ref={menuRef}>
@@ -102,31 +102,32 @@ export default function Toolbar() {
         )}
       </div>
 
-      <div className="w-px h-5" style={{ background: '#2b2f36' }} />
+      <div className="w-px h-5 shrink-0" style={{ background: '#2b2f36' }} />
       <button className={'btn' + (mode === 'translate' ? ' btn-active' : '')} title="Move (W)" onClick={() => setMode('translate')}>
-        Move
+        {isMobile ? 'W' : 'Move'}
       </button>
       <button className={'btn' + (mode === 'rotate' ? ' btn-active' : '')} title="Rotate (E)" onClick={() => setMode('rotate')}>
-        Rotate
+        {isMobile ? 'E' : 'Rotate'}
       </button>
       <button className={'btn' + (mode === 'scale' ? ' btn-active' : '')} title="Scale (R)" onClick={() => setMode('scale')}>
-        Scale
+        {isMobile ? 'R' : 'Scale'}
       </button>
 
-      <div className="w-px h-5" style={{ background: '#2b2f36' }} />
-      <button className={'btn' + (snap ? ' btn-active' : '')} onClick={toggleSnap}>
-        Snap: {snap ? 'On' : 'Off'}
+      <div className="w-px h-5 shrink-0" style={{ background: '#2b2f36' }} />
+      <button className={'btn' + (snap ? ' btn-active' : '')} onClick={toggleSnap} title="Toggle snapping">
+        {isMobile ? '🧲' : `Snap: ${snap ? 'On' : 'Off'}`}
       </button>
 
       <div className="flex-1" />
-      <span className="text-xs" style={{ color: '#8b93a0' }}>
+      <span className="text-xs hidden md:inline" style={{ color: '#8b93a0' }}>
         {project.name}
       </span>
-      <button className="btn" onClick={onSnapshot}>
-        📷 Snapshot PNG
+      <button className="btn" onClick={onSnapshot} title="Snapshot PNG">
+        📷 <span className="hidden sm:inline">Snapshot PNG</span>
       </button>
       <button
         className="btn"
+        title="Export project JSON"
         onClick={() =>
           downloadFile(
             project.name.replace(/[^a-z0-9-_]+/gi, '_') + '.json',
@@ -135,10 +136,10 @@ export default function Toolbar() {
           )
         }
       >
-        Export JSON
+        {isMobile ? '⇩' : 'Export JSON'}
       </button>
-      <button className="btn btn-active" onClick={saveProject}>
-        Save (⌘S)
+      <button className="btn btn-active" onClick={saveProject} title="Save (Ctrl/Cmd+S)">
+        {isMobile ? '💾' : 'Save (⌘S)'}
       </button>
     </div>
   )

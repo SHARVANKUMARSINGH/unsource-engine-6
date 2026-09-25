@@ -5,13 +5,16 @@ A browser-based 3D scene editor built with React, TypeScript, Three.js, React Th
 ## What's implemented (Phase 1 foundation)
 
 - Project manager: create, open, duplicate, delete, import/export projects as JSON, saved to `localStorage`
-- Real Three.js viewport (React Three Fiber) with orbit camera, grid, axes, shadows
+- Real Three.js viewport (React Three Fiber) with orbit camera, grid, axes
+- Lightweight preview lighting (no real-time shadow maps) so the viewport reads as a modeling preview rather than a game-engine render — full lit/shadowed output is the job of the render pipeline (next phase)
 - Scene hierarchy: select, rename, duplicate, hide/show, delete
 - Add menu: Cube, Sphere, Plane, Cylinder, Cone, Torus, Point Light, Sun
 - Transform gizmos (move / rotate / scale) with optional snapping, synced live to the Inspector
 - Inspector: transform fields + PBR material controls (color, metalness, roughness) or light controls (color, intensity)
 - Keyboard shortcuts: `W` move, `E` rotate, `R` scale, `F` focus selected, `Delete` remove, `Ctrl/Cmd+S` save
-- PNG snapshot of the current view, project export/import as JSON
+- Resizable, closable Hierarchy/Inspector panels (drag the edge to resize, ✕ to hide, click the thin edge tab to bring back)
+- Responsive layout: on phone-width screens the side panels become "Objects" / "Properties" bottom sheets instead of sidebars
+- PNG snapshot of the current view (fixed: canvas now renders with `preserveDrawingBuffer` so the download isn't blank), project export/import as JSON
 
 **Not yet built** (see the original spec's Phase 12–20): animation timeline, Three.js path tracer, Babylon.js PBR renderer, render window (resolution/samples/output format), video export, undo/redo, GLTF import, command palette. These are the next planned phases.
 

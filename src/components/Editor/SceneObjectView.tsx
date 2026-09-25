@@ -44,8 +44,6 @@ export default function SceneObjectView({ data, onSelect, onRef }: Props) {
         position={data.position}
         rotation={data.rotation}
         scale={data.scale}
-        castShadow
-        receiveShadow
         onClick={(e) => {
           e.stopPropagation()
           onSelect(data.id)
@@ -72,21 +70,8 @@ export default function SceneObjectView({ data, onSelect, onRef }: Props) {
         rotation={data.rotation}
         scale={data.scale}
       >
-        {data.type === 'point' && <pointLight color={color} intensity={intensity} castShadow shadow-mapSize={[1024, 1024]} />}
-        {data.type === 'sun' && (
-          <directionalLight
-            color={color}
-            intensity={intensity}
-            castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-camera-left={-8}
-            shadow-camera-right={8}
-            shadow-camera-top={8}
-            shadow-camera-bottom={-8}
-            shadow-camera-near={0.5}
-            shadow-camera-far={40}
-          />
-        )}
+        {data.type === 'point' && <pointLight color={color} intensity={intensity * 0.6} distance={0} decay={2} />}
+        {data.type === 'sun' && <directionalLight color={color} intensity={intensity * 0.5} />}
         <mesh
           onClick={(e) => {
             e.stopPropagation()

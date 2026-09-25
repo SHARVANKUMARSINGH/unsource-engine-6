@@ -125,14 +125,15 @@ export default function Viewport() {
   return (
     <div className="flex-1 relative min-w-0">
       <Canvas
-        shadows
-        dpr={[1, 2]}
+        dpr={[1, 1.5]}
+        gl={{ preserveDrawingBuffer: true, antialias: true }}
         camera={{ position: [4, 3.2, 6], fov: 50, near: 0.05, far: 500 }}
         onPointerMissed={() => select(null)}
       >
         <CaptureGl />
         <color attach="background" args={['#14161a']} />
-        <hemisphereLight color={0x556270} groundColor={0x0e0f11} intensity={0.55} />
+        <hemisphereLight color={0x6b7280} groundColor={0x14161a} intensity={0.9} />
+        <ambientLight intensity={0.25} />
         <gridHelper args={[20, 20, 0x3a3f47, 0x24272d]} />
         <axesHelper args={[1.2]} />
 
