@@ -27,6 +27,10 @@ export default function Toolbar({ isMobile }: { isMobile: boolean }) {
   const saveProject = useEngine((s) => s.saveProject)
   const backToProjects = useEngine((s) => s.backToProjects)
   const toast = useEngine((s) => s.toast)
+  const undo = useEngine((s) => s.undo)
+  const redo = useEngine((s) => s.redo)
+  const canUndo = useEngine((s) => s.historyPast.length > 0)
+  const canRedo = useEngine((s) => s.historyFuture.length > 0)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -111,6 +115,14 @@ export default function Toolbar({ isMobile }: { isMobile: boolean }) {
       </button>
       <button className={'btn' + (mode === 'scale' ? ' btn-active' : '')} title="Scale (R)" onClick={() => setMode('scale')}>
         {isMobile ? 'R' : 'Scale'}
+      </button>
+
+      <div className="w-px h-5 shrink-0" style={{ background: '#2b2f36' }} />
+      <button className="btn" disabled={!canUndo} onClick={undo} title="Undo (Ctrl/Cmd+Z)">
+        ↶
+      </button>
+      <button className="btn" disabled={!canRedo} onClick={redo} title="Redo (Ctrl/Cmd+Shift+Z)">
+        ↷
       </button>
 
       <div className="w-px h-5 shrink-0" style={{ background: '#2b2f36' }} />

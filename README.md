@@ -6,7 +6,8 @@ A browser-based 3D scene editor built with React, TypeScript, Three.js, React Th
 
 - Project manager: create, open, duplicate, delete, import/export projects as JSON, saved to `localStorage`
 - Real Three.js viewport (React Three Fiber) with orbit camera, grid, axes
-- Lightweight preview lighting (no real-time shadow maps) so the viewport reads as a modeling preview rather than a game-engine render — full lit/shadowed output is the job of the render pipeline (next phase)
+- Lightweight preview lighting (no real-time shadow maps): a soft studio environment map for believable PBR reflections/IBL, plus one cheap blurred contact-shadow pass for grounding — reads as a renderer preview rather than dynamic game lighting, without simulating real-time shadows/light bounces
+- Undo / redo (`Ctrl/Cmd+Z`, `Ctrl/Cmd+Shift+Z`, toolbar buttons) for object add/delete/duplicate/visibility and transform/material/light edits — one undo step per drag or edit session, not per intermediate value
 - Scene hierarchy: select, rename, duplicate, hide/show, delete
 - Add menu: Cube, Sphere, Plane, Cylinder, Cone, Torus, Point Light, Sun
 - Transform gizmos (move / rotate / scale) with optional snapping, synced live to the Inspector
@@ -16,7 +17,7 @@ A browser-based 3D scene editor built with React, TypeScript, Three.js, React Th
 - Responsive layout: on phone-width screens the side panels become "Objects" / "Properties" bottom sheets instead of sidebars
 - PNG snapshot of the current view (fixed: canvas now renders with `preserveDrawingBuffer` so the download isn't blank), project export/import as JSON
 
-**Not yet built** (see the original spec's Phase 12–20): animation timeline, Three.js path tracer, Babylon.js PBR renderer, render window (resolution/samples/output format), video export, undo/redo, GLTF import, command palette. These are the next planned phases.
+**Not yet built** (see the original spec's Phase 12–20): animation timeline, Three.js path tracer, Babylon.js PBR renderer, render window (resolution/samples/output format), video export, GLTF import, command palette. These are the next planned phases.
 
 ## Local development
 

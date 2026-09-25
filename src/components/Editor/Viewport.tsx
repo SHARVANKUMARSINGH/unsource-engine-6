@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
-import { OrbitControls, TransformControls } from '@react-three/drei'
+import { ContactShadows, Environment, OrbitControls, TransformControls } from '@react-three/drei'
 import * as THREE from 'three'
 import type { Object3D } from 'three'
 import { useEngine } from '../../state/store'
@@ -49,13 +49,22 @@ export default function Viewport() {
   const updateObject = useEngine((s) => s.updateObject)
   const deleteObject = useEngine((s) => s.deleteObject)
   const saveProject = useEngine((s) => s.saveProject)
+  const commitHistory = useEngine((s) => s.commitHistory)
+  const undo = useEngine((s) => s.undo)
+  const redo = useEngine((s) => s.redo)
 
   const objectRefs = useRef<Map<string, Object3D>>(new Map())
   const orbitRef = useRef<any>(null)
   const xformRef = useRef<any>(null)
   const [stats, setStats] = useState({ fps: 0, tris: 0, calls: 0 })
 
-  const selectedObj = selectedId ? objectRefs.current.get(selectedId) ?? null : null
+  // A plain ref map isn't reactive: a just-created mesh attaches its ref during
+  // the same commit that renders it, so we re-sync into real state after every
+  // commit (selection or object-list change) instead of reading the map inline.
+  const [selectedObj, setSelectedObj] = useState<Object3D | null>(null)
+  useEffect(() => {
+    setSelectedObj(selectedId ? objectRefs.current.get(selectedId) ?? null : null)
+  }, [selectedId, project])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -65,6 +74,12 @@ export default function Viewport() {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault()
         saveProject()
+        return
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) redo()
+        else undo()
         return
       }
       if (e.key === 'w') setMode('translate')
@@ -81,7 +96,7 @@ export default function Viewport() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [selectedId, selectedObj, setMode, deleteObject, saveProject])
+  }, [selectedId, selectedObj, setMode, deleteObject, saveProject, undo, redo])
 
   // FPS counter
   useEffect(() => {
@@ -126,14 +141,19 @@ export default function Viewport() {
     <div className="flex-1 relative min-w-0">
       <Canvas
         dpr={[1, 1.5]}
-        gl={{ preserveDrawingBuffer: true, antialias: true }}
+        gl={{ preserveDrawingBuffer: true, antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
         camera={{ position: [4, 3.2, 6], fov: 50, near: 0.05, far: 500 }}
         onPointerMissed={() => select(null)}
       >
         <CaptureGl />
         <color attach="background" args={['#14161a']} />
-        <hemisphereLight color={0x6b7280} groundColor={0x14161a} intensity={0.9} />
-        <ambientLight intensity={0.25} />
+        <hemisphereLight color={0x6b7280} groundColor={0x14161a} intensity={0.5} />
+        <ambientLight intensity={0.15} />
+        {/* A static environment map gives PBR materials believable reflections/IBL
+            without any per-frame light simulation — cheap, and reads as a render
+            preview rather than flat game shading. */}
+        <Environment preset="studio" environmentIntensity={0.6} />
+        <ContactShadows position={[0, 0.001, 0]} opacity={0.45} scale={14} blur={2.2} far={4} resolution={256} color="#000000" />
         <gridHelper args={[20, 20, 0x3a3f47, 0x24272d]} />
         <axesHelper args={[1.2]} />
 
@@ -144,11 +164,13 @@ export default function Viewport() {
             ref={xformRef}
             object={selectedObj}
             mode={mode}
+            size={1}
             translationSnap={snapT}
             rotationSnap={snapR}
             scaleSnap={snapS}
             onObjectChange={onObjectChange}
             onMouseDown={() => {
+              commitHistory()
               if (orbitRef.current) orbitRef.current.enabled = false
             }}
             onMouseUp={() => {

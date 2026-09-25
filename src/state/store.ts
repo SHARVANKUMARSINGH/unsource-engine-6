@@ -1,9 +1,12 @@
 import { create } from 'zustand'
-import type { ObjectType, ProjectMeta, SceneObjectData } from '../types'
+import type { ObjectType, ProjectData, ProjectMeta, SceneObjectData } from '../types'
 import { isLight, TYPE_LABEL } from '../types'
 import { demoScene, downloadFile, loadProjects, mkObj, saveProjects, uid } from '../utils/storage'
 
 export type TransformMode = 'translate' | 'rotate' | 'scale'
+
+const MAX_HISTORY = 50
+const cloneData = (d: ProjectData): ProjectData => JSON.parse(JSON.stringify(d))
 
 interface EngineState {
   projects: Record<string, ProjectMeta>
@@ -12,6 +15,8 @@ interface EngineState {
   mode: TransformMode
   snap: boolean
   toastMsg: string | null
+  historyPast: ProjectData[]
+  historyFuture: ProjectData[]
 
   refreshProjects: () => void
   createProject: (name: string, template: 'demo' | 'empty') => void
@@ -33,6 +38,10 @@ interface EngineState {
   setMode: (m: TransformMode) => void
   toggleSnap: () => void
   toast: (msg: string) => void
+
+  commitHistory: () => void
+  undo: () => void
+  redo: () => void
 }
 
 export const useEngine = create<EngineState>((set, get) => ({
@@ -42,6 +51,8 @@ export const useEngine = create<EngineState>((set, get) => ({
   mode: 'translate',
   snap: false,
   toastMsg: null,
+  historyPast: [],
+  historyFuture: [],
 
   refreshProjects: () => set({ projects: loadProjects() }),
 
@@ -55,13 +66,13 @@ export const useEngine = create<EngineState>((set, get) => ({
     }
     const projects = { ...get().projects, [id]: meta }
     saveProjects(projects)
-    set({ projects, project: JSON.parse(JSON.stringify(meta)), selectedId: null })
+    set({ projects, project: JSON.parse(JSON.stringify(meta)), selectedId: null, historyPast: [], historyFuture: [] })
   },
 
   openProject: (id) => {
     const meta = get().projects[id]
     if (!meta) return
-    set({ project: JSON.parse(JSON.stringify(meta)), selectedId: null })
+    set({ project: JSON.parse(JSON.stringify(meta)), selectedId: null, historyPast: [], historyFuture: [] })
   },
 
   backToProjects: () => set({ project: null, selectedId: null, projects: loadProjects() }),
@@ -117,6 +128,7 @@ export const useEngine = create<EngineState>((set, get) => ({
   addObject: (type) => {
     const p = get().project
     if (!p) return
+    get().commitHistory()
     const n = p.data.objects.length
     const count = p.data.objects.filter((o) => o.type === type).length + 1
     const x = ((n % 5) - 2) * 1.4
@@ -144,6 +156,7 @@ export const useEngine = create<EngineState>((set, get) => ({
   toggleVisible: (id) => {
     const p = get().project
     if (!p) return
+    get().commitHistory()
     const objects = p.data.objects.map((o) => (o.id === id ? { ...o, visible: !o.visible } : o))
     set({ project: { ...p, data: { objects } } })
   },
@@ -153,6 +166,7 @@ export const useEngine = create<EngineState>((set, get) => ({
     if (!p) return
     const src = p.data.objects.find((o) => o.id === id)
     if (!src) return
+    get().commitHistory()
     const copy: SceneObjectData = { ...JSON.parse(JSON.stringify(src)), id: uid(), name: src.name + ' Copy' }
     copy.position = [src.position[0] + 0.6, src.position[1], src.position[2]]
     set({ project: { ...p, data: { objects: [...p.data.objects, copy] } }, selectedId: copy.id })
@@ -161,6 +175,7 @@ export const useEngine = create<EngineState>((set, get) => ({
   deleteObject: (id) => {
     const p = get().project
     if (!p) return
+    get().commitHistory()
     const objects = p.data.objects.filter((o) => o.id !== id)
     set({ project: { ...p, data: { objects } }, selectedId: get().selectedId === id ? null : get().selectedId })
   },
@@ -171,5 +186,33 @@ export const useEngine = create<EngineState>((set, get) => ({
   toast: (msg) => {
     set({ toastMsg: msg })
     setTimeout(() => set((s) => (s.toastMsg === msg ? { toastMsg: null } : {})), 2200)
+  },
+
+  // Undo/redo: whole-scene snapshots. Continuous edits (a gizmo drag, a slider
+  // being dragged) call commitHistory() once at the start of the interaction,
+  // not on every intermediate change, so one drag = one undo step.
+  commitHistory: () => {
+    const p = get().project
+    if (!p) return
+    const past = [...get().historyPast, cloneData(p.data)].slice(-MAX_HISTORY)
+    set({ historyPast: past, historyFuture: [] })
+  },
+
+  undo: () => {
+    const p = get().project
+    const past = get().historyPast
+    if (!p || past.length === 0) return
+    const prev = past[past.length - 1]
+    const future = [...get().historyFuture, cloneData(p.data)].slice(-MAX_HISTORY)
+    set({ project: { ...p, data: prev }, historyPast: past.slice(0, -1), historyFuture: future, selectedId: null })
+  },
+
+  redo: () => {
+    const p = get().project
+    const future = get().historyFuture
+    if (!p || future.length === 0) return
+    const next = future[future.length - 1]
+    const past = [...get().historyPast, cloneData(p.data)].slice(-MAX_HISTORY)
+    set({ project: { ...p, data: next }, historyFuture: future.slice(0, -1), historyPast: past, selectedId: null })
   },
 }))
